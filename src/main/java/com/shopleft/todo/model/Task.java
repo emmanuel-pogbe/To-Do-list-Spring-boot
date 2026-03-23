@@ -2,6 +2,8 @@ package com.shopleft.todo.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 import com.shopleft.todo.model.User;
 
 @Entity
@@ -14,13 +16,18 @@ public class Task {
 
     private String task;
 
+    private LocalDate createdAt;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Task() {}
+    public Task() {
+        this.createdAt = LocalDate.now();
+    }
     public Task(String task) {
         this.task = task;
+        this.createdAt = LocalDate.now();
     }
 
     // getter and setter
@@ -31,4 +38,5 @@ public class Task {
     public void setTask(String task) {this.task = task;}
     public String getTask() {return this.task;}
 
+    public LocalDate getCreatedAt() {return createdAt;}
 }
