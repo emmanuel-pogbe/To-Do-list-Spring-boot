@@ -80,4 +80,8 @@ public class TaskServiceImpl implements TaskService {
         }
         return result;
     }
+
+    public List<Task> findByTaskContains(Long userId, String description) {
+        return taskRepository.findByTaskContains(userId,description);
+    }
 }

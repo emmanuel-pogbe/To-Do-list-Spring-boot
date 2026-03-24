@@ -13,5 +13,6 @@ public interface TaskService {
     List<Task> getTasksByUserId(Long userId);
     DeletedTask deleteTask(Long taskId);
     UpdatedTask updateTask(Long taskId, String taskDescription);
+    List<Task> findByTaskContains(Long userId,String description);
 }
 

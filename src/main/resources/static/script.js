@@ -6,6 +6,9 @@ const appContainer = document.getElementById('app-container');
 const taskListEl = document.getElementById('task-list');
 const emptyStateEl = document.getElementById('empty-state');
 const statusMessage = document.getElementById('status-message');
+const searchFormEl = document.getElementById('search-form');
+const searchInputEl = document.getElementById('search-input');
+const clearSearchBtnEl = document.getElementById('clear-search-btn');
 
 function showMessage(message, type = 'success') {
   statusMessage.textContent = message;
@@ -154,13 +157,27 @@ document.getElementById('task-form').addEventListener('submit', async (event) =>
   }
 });
 
+searchFormEl.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  await handleLoadTasks();
+});
+
+clearSearchBtnEl.addEventListener('click', async () => {
+  searchInputEl.value = '';
+  await handleLoadTasks();
+});
+
 async function handleLoadTasks() {
   if (!currentUserId) {
     showMessage('Log in first to view your tasks.', 'error');
     return;
   }
 
-  const response = await fetch('/task/user/' + currentUserId);
+  const searchTerm = searchInputEl.value.trim();
+  const endpoint = searchTerm
+    ? '/task/user/' + currentUserId + '?search=' + encodeURIComponent(searchTerm)
+    : '/task/user/' + currentUserId;
+  const response = await fetch(endpoint);
   const tasks = await response.json().catch(() => []);
 
   taskListEl.innerHTML = '';

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shopleft.todo.dto.DeletedTask;
@@ -29,8 +30,11 @@ public class TaskController {
     }
 
     @GetMapping(path = "/user/{userId}")
-    public List<Task> getTasksByUser(@PathVariable Long userId) {
-        return taskService.getTasksByUserId(userId);
+    public List<Task> getTasksByUser(@PathVariable Long userId, @RequestParam(required = false) String search) {
+        if (search == null || search.isBlank()) {
+            return taskService.getTasksByUserId(userId);
+        }
+        return taskService.findByTaskContains(userId, search.trim());
     }
     
     @PostMapping(path = "/create")

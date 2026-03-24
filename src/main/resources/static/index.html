@@ -286,6 +286,54 @@
       color: #1a1a1a;
     }
 
+    .tasks-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-form input {
+      width: 220px;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .search-btn,
+    .clear-search-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .search-btn {
+      background: #0f766e;
+      color: white;
+    }
+
+    .search-btn:hover {
+      background: #0d5f58;
+    }
+
+    .clear-search-btn {
+      background: #e5e7eb;
+      color: #1f2937;
+    }
+
+    .clear-search-btn:hover {
+      background: #d1d5db;
+    }
+
     .load-btn {
       padding: 8px 16px;
       background: #2563eb;
@@ -442,6 +490,25 @@
         gap: 10px;
       }
 
+      .tasks-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .tasks-tools {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-form {
+        flex-wrap: wrap;
+      }
+
+      .search-form input {
+        width: 100%;
+      }
+
       .task-actions {
         margin-left: 0;
       }
@@ -547,7 +614,14 @@
         <div class="tasks-section">
           <div class="tasks-header">
             <h2>Your Tasks</h2>
-            <button class="load-btn" onclick="handleLoadTasks()">Refresh</button>
+            <div class="tasks-tools">
+              <form class="search-form" id="search-form">
+                <input type="text" id="search-input" placeholder="Search tasks...">
+                <button type="submit" class="search-btn">Search</button>
+                <button type="button" class="clear-search-btn" id="clear-search-btn">Clear</button>
+              </form>
+              <button class="load-btn" onclick="handleLoadTasks()">Refresh</button>
+            </div>
           </div>
           <ul class="task-list" id="task-list"></ul>
           <div class="empty-state" id="empty-state">
