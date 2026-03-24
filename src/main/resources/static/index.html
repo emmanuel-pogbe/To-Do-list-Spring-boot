@@ -327,6 +327,48 @@
       flex: 1;
     }
 
+    .task-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 12px;
+    }
+
+    .task-actions input {
+      width: 220px;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .task-actions button {
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background: #f59e0b;
+      color: #fff;
+    }
+
+    .edit-btn:hover {
+      background: #d97706;
+    }
+
+    .delete-btn {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .delete-btn:hover {
+      background: #b91c1c;
+    }
+
     .task-text p {
       font-size: 14px;
       color: #333;
@@ -392,6 +434,20 @@
     @media (max-width: 768px) {
       .app-main {
         flex-direction: column;
+      }
+
+      .task-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .task-actions {
+        margin-left: 0;
+      }
+
+      .task-actions input {
+        width: 100%;
       }
 
       .app-sidebar {

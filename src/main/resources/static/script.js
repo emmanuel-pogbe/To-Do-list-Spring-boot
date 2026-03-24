@@ -64,6 +64,19 @@ async function postJson(url, body) {
   return { response, data };
 }
 
+async function requestJson(url, method, body) {
+  const options = { method, headers: {} };
+
+  if (body) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(url, options);
+  const data = await response.json().catch(() => ({}));
+  return { response, data };
+}
+
 document.getElementById('signup-form').addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -169,12 +182,71 @@ async function handleLoadTasks() {
       const dateP = document.createElement('p');
       dateP.className = 'task-date';
       dateP.textContent = 'Created: ' + (item.createdAt || 'Today');
+
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'task-actions';
+
+      const editInput = document.createElement('input');
+      editInput.type = 'text';
+      editInput.placeholder = 'Update description';
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-btn';
+      editBtn.type = 'button';
+      editBtn.textContent = 'Update';
+      editBtn.addEventListener('click', async () => {
+        await handleUpdateTask(item.id, editInput.value);
+      });
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', async () => {
+        await handleDeleteTask(item.id);
+      });
+
+      actionsDiv.appendChild(editInput);
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(deleteBtn);
       
       taskDiv.appendChild(taskP);
       taskDiv.appendChild(dateP);
       li.appendChild(taskDiv);
+      li.appendChild(actionsDiv);
       taskListEl.appendChild(li);
     });
+  }
+}
+
+async function handleUpdateTask(taskId, newDescription) {
+  const description = newDescription.trim();
+
+  if (!description) {
+    showMessage('Enter a new task description first.', 'error');
+    return;
+  }
+
+  const { response, data } = await requestJson('/task/update/' + taskId, 'PATCH', {
+    description
+  });
+
+  if (response.ok && (data.isUpdated || data.updated || data.id)) {
+    showMessage('Task updated successfully.', 'success');
+    handleLoadTasks();
+  } else {
+    showMessage('Failed to update task.', 'error');
+  }
+}
+
+async function handleDeleteTask(taskId) {
+  const { response, data } = await requestJson('/task/delete/' + taskId, 'DELETE');
+
+  if (response.ok && (data.deleted || data.isDeleted || data.id)) {
+    showMessage('Task deleted successfully.', 'success');
+    handleLoadTasks();
+  } else {
+    showMessage('Failed to delete task.', 'error');
   }
 }
 

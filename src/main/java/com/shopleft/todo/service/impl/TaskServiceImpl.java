@@ -43,12 +43,14 @@ public class TaskServiceImpl implements TaskService {
 
     public DeletedTask deleteTask(Long taskId) {
         Optional<Task> taskOptional = taskRepository.findById(taskId);
-        if (taskOptional.isEmpty()) {
+        if (!taskOptional.isPresent()) {
+            System.out.println("\n\n\nWE DID NOT FIND THE TASK\n\n\n");
             DeletedTask taskFailed = new DeletedTask();
             taskFailed.setDeleted(false);
             return taskFailed;
         }
         else {
+            System.out.println("\n\n\nWE FOUND THE TASK\n\n\n");
             taskRepository.deleteTaskById(taskId);
             Task gottenTask = taskOptional.get();
             return new DeletedTask(
