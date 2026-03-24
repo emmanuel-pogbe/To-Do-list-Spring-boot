@@ -4,6 +4,8 @@ public class NewTask {
     private Long userId;
     private String task;
 
+    public NewTask() {}
+
     public NewTask(Long userId, String task) {
         this.userId = userId;
         this.task = task;

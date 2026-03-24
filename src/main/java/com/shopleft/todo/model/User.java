@@ -1,8 +1,7 @@
 package com.shopleft.todo.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-
-import com.shopleft.todo.model.Task;
 
 import java.util.List;
 
@@ -16,6 +15,7 @@ public class User {
 
     private String username;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @OneToMany(mappedBy = "user")

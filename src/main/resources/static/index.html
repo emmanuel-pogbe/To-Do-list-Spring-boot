@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To do list app - Manage Your Tasks</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    /* Auth Modal */
+    .auth-modal {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .auth-modal.hidden {
+      display: none;
+      opacity: 0;
+    }
+
+    .auth-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 420px;
+      padding: 40px;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .auth-header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+    }
+
+    .auth-header p {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .form-group button {
+      width: 100%;
+      padding: 10px 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .form-group button:hover {
+      background: #1d4ed8;
+    }
+
+    .form-group button:active {
+      transform: scale(0.98);
+    }
+
+    .auth-toggle {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .auth-toggle a {
+      color: #2563eb;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .auth-toggle a:hover {
+      text-decoration: underline;
+    }
+
+    .form-message {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .form-message.show {
+      display: block;
+    }
+
+    .form-message.error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+    }
+
+    .form-message.success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+    }
+
+    /* Main App Layout */
+    .app-container {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      background: #f5f5f5;
+    }
+
+    .app-container.show {
+      display: flex;
+    }
+
+    .app-header {
+      background: white;
+      border-bottom: 1px solid #eee;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .app-header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-badge {
+      background: #2563eb;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .logout-btn {
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #f5f5f5;
+    }
+
+    .app-main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .app-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .create-task-form {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      margin-bottom: 24px;
+    }
+
+    .create-task-form .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 0;
+    }
+
+    .create-task-form input {
+      flex: 1;
+      margin-bottom: 8px;
+    }
+
+    .create-task-form button {
+      padding: 10px 24px;
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+
+    .tasks-section {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    .tasks-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tasks-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .load-btn {
+      padding: 8px 16px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .load-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .task-list {
+      list-style: none;
+    }
+
+    .task-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-item:hover {
+      background: #fafafa;
+    }
+
+    .task-text {
+      flex: 1;
+    }
+
+    .task-text p {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .task-date {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: #999;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    .status-message {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+      animation: slideInUp 0.3s ease;
+      z-index: 100;
+    }
+
+    .status-message.show {
+      display: block;
+    }
+
+    .status-message.error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+    }
+
+    .status-message.success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+    }
+
+    @keyframes slideInUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-main {
+        flex-direction: column;
+      }
+
+      .app-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+      }
+
+      .auth-container {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Auth Modal -->
+  <div class="auth-modal" id="auth-modal">
+    <div class="auth-container">
+      <!-- Login Form -->
+      <div id="login-view">
+        <div class="auth-header">
+          <h1>To do list app</h1>
+          <p>Sign in to your account</p>
+        </div>
+        <form id="login-form">
+          <div class="form-message" id="login-error"></div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="login-username" placeholder="your username" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="your password" required>
+          </div>
+          <div class="form-group">
+            <button type="submit">Sign In</button>
+          </div>
+        </form>
+        <div class="auth-toggle">
+          Don't have an account? <a onclick="switchToSignup()">Sign up</a>
+        </div>
+      </div>
+
+      <!-- Signup Form -->
+      <div id="signup-view" style="display: none;">
+        <div class="auth-header">
+          <h1>To do list app</h1>
+          <p>Create your account</p>
+        </div>
+        <form id="signup-form">
+          <div class="form-message" id="signup-error"></div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="signup-username" placeholder="choose a username" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="signup-password" placeholder="create a password" required>
+          </div>
+          <div class="form-group">
+            <button type="submit">Create Account</button>
+          </div>
+        </form>
+        <div class="auth-toggle">
+          Already have an account? <a onclick="switchToLogin()">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app-container" id="app-container">
+    <!-- Header -->
+    <div class="app-header">
+      <h1>To do list app</h1>
+      <div class="user-info">
+        <div class="user-badge" id="user-badge"></div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="app-main">
+      <!-- Content -->
+      <div class="app-content">
+        <!-- Create Task -->
+        <div class="create-task-form">
+          <form id="task-form">
+            <div class="form-group">
+              <input type="text" id="task-text" placeholder="Add a new task..." required>
+              <button type="submit">Add Task</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Task List -->
+        <div class="tasks-section">
+          <div class="tasks-header">
+            <h2>Your Tasks</h2>
+            <button class="load-btn" onclick="handleLoadTasks()">Refresh</button>
+          </div>
+          <ul class="task-list" id="task-list"></ul>
+          <div class="empty-state" id="empty-state">
+            <p>No tasks yet. Create one to get started!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Message -->
+  <div class="status-message" id="status-message"></div>
+
+  <script src="/script.js"></script>
+</body>
+</html>

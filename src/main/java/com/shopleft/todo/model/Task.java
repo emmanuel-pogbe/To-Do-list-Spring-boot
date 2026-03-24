@@ -1,10 +1,9 @@
 package com.shopleft.todo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
-
-import com.shopleft.todo.model.User;
 
 @Entity
 @Table(name = "tasks")
@@ -20,6 +19,7 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"password", "tasks"})
     private User user;
 
     public Task() {
@@ -39,4 +39,7 @@ public class Task {
     public String getTask() {return this.task;}
 
     public LocalDate getCreatedAt() {return createdAt;}
+
+    public User getUser() {return this.user;}
+    public void setUser(User user) {this.user = user;}
 }
