@@ -3,12 +3,12 @@ package com.shopleft.todo.service.impl;
 import java.util.List;
 import java.util.Optional;
 
-import org.h2.tools.DeleteDbFiles;
 import org.springframework.stereotype.Service;
 
 import com.shopleft.todo.dto.DeletedTask;
 import com.shopleft.todo.dto.NewTask;
 import com.shopleft.todo.dto.TaskCreated;
+import com.shopleft.todo.dto.UpdatedTask;
 import com.shopleft.todo.model.Task;
 import com.shopleft.todo.model.User;
 import com.shopleft.todo.repository.TaskRepository;
@@ -58,5 +58,24 @@ public class TaskServiceImpl implements TaskService {
                 true
             );
         }
+    }
+
+    public UpdatedTask updateTask(Long taskId, String taskDescription) {
+        Optional<Task> gottenTask = taskRepository.findById(taskId);
+        UpdatedTask result = new UpdatedTask();
+        if (gottenTask.isPresent()) {
+            Task taskToUpdate = gottenTask.get();
+            taskToUpdate.setTask(taskDescription);
+            taskRepository.save(taskToUpdate);
+
+            result.setId(taskToUpdate.getId());
+            result.setTask(taskDescription);
+            result.setIsUpdated(true);
+            result.setCreatedAt(taskToUpdate.getCreatedAt());
+        }
+        else {
+            result.setIsUpdated(false);
+        }
+        return result;
     }
 }
