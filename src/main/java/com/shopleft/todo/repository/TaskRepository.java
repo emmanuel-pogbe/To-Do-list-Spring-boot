@@ -10,4 +10,8 @@ import com.shopleft.todo.model.Task;
 @Repository
 public interface TaskRepository extends JpaRepository<Task,Long> {
 	List<Task> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+	Task deleteTaskById(Long id);
+
+
 }
