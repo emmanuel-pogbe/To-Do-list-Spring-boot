@@ -1,5 +1,6 @@
 package com.shopleft.todo.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -51,5 +52,24 @@ public class TaskController {
     @PatchMapping(path = "/update/{id}")
     public UpdatedTask updatedTask(@PathVariable("id") Long taskId, @RequestBody Map<String,String> update) {
         return taskService.updateTask(taskId, update.get("description"));
+    }
+
+    @GetMapping(path = "/user/{userId}/after")
+    public List<Task> getTasksAfter(@PathVariable Long userId, @RequestParam String date) {
+        LocalDate minDate = LocalDate.parse(date);
+        return taskService.findByTaskAfter(userId, minDate);
+    }
+
+    @GetMapping(path = "/user/{userId}/before")
+    public List<Task> getTasksBefore(@PathVariable Long userId, @RequestParam String date) {
+        LocalDate maxDate = LocalDate.parse(date);
+        return taskService.findByTaskBefore(userId, maxDate);
+    }
+
+    @GetMapping(path = "/user/{userId}/between")
+    public List<Task> getTasksBetween(@PathVariable Long userId, @RequestParam String startDate, @RequestParam String endDate) {
+        LocalDate minDate = LocalDate.parse(startDate);
+        LocalDate maxDate = LocalDate.parse(endDate);
+        return taskService.findByTaskBetween(userId, minDate, maxDate);
     }
 }

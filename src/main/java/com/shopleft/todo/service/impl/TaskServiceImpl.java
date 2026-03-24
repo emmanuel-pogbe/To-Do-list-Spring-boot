@@ -1,5 +1,6 @@
 package com.shopleft.todo.service.impl;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,5 +84,17 @@ public class TaskServiceImpl implements TaskService {
 
     public List<Task> findByTaskContains(Long userId, String description) {
         return taskRepository.findByTaskContains(userId,description);
+    }
+
+    public List<Task> findByTaskAfter(Long userId, LocalDate minDate) {
+        return taskRepository.findByTaskAfter(userId, minDate);
+    }
+
+    public List<Task> findByTaskBefore(Long userId, LocalDate maxDate) {
+        return taskRepository.findByTaskBefore(userId, maxDate);
+    }
+
+    public List<Task> findByTaskBetween(Long userId, LocalDate minDate, LocalDate maxDate) {
+        return taskRepository.findByTaskBetween(userId, minDate, maxDate);
     }
 }

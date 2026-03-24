@@ -334,6 +334,84 @@
       background: #d1d5db;
     }
 
+    .date-filter-container {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .filter-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .filter-toggle input[type="radio"] {
+      cursor: pointer;
+    }
+
+    .filter-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .date-input {
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .date-input:focus {
+      outline: none;
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+    }
+
+    .apply-filter-btn {
+      padding: 8px 12px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .apply-filter-btn:hover {
+      background: #059669;
+    }
+
+    .reset-filter-btn {
+      padding: 8px 12px;
+      background: #6b7280;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .reset-filter-btn:hover {
+      background: #4b5563;
+    }
+
     .load-btn {
       padding: 8px 16px;
       background: #2563eb;
@@ -509,6 +587,24 @@
         width: 100%;
       }
 
+      .date-filter-container {
+        padding: 10px;
+      }
+
+      .filter-toggle {
+        flex-direction: column;
+      }
+
+      .filter-inputs {
+        flex-direction: column;
+      }
+
+      .date-input,
+      .apply-filter-btn,
+      .reset-filter-btn {
+        width: 100%;
+      }
+
       .task-actions {
         margin-left: 0;
       }
@@ -621,6 +717,35 @@
                 <button type="button" class="clear-search-btn" id="clear-search-btn">Clear</button>
               </form>
               <button class="load-btn" onclick="handleLoadTasks()">Refresh</button>
+            </div>
+          </div>
+          <!-- Date Filter -->
+          <div class="date-filter-container" id="date-filter-container">
+            <div class="filter-toggle">
+              <label>
+                <input type="radio" name="filter-type" value="all" id="filter-all" checked>
+                All Tasks
+              </label>
+              <label>
+                <input type="radio" name="filter-type" value="after" id="filter-after">
+                After Date
+              </label>
+              <label>
+                <input type="radio" name="filter-type" value="before" id="filter-before">
+                Before Date
+              </label>
+              <label>
+                <input type="radio" name="filter-type" value="between" id="filter-between">
+                Between Dates
+              </label>
+            </div>
+            <div class="filter-inputs">
+              <input type="date" id="date-after" class="date-input" placeholder="From date" style="display: none;">
+              <input type="date" id="date-before" class="date-input" placeholder="To date" style="display: none;">
+              <input type="date" id="date-from" class="date-input" placeholder="From date" style="display: none;">
+              <input type="date" id="date-to" class="date-input" placeholder="To date" style="display: none;">
+              <button type="button" class="apply-filter-btn" id="apply-filter-btn" style="display: none;">Apply Filter</button>
+              <button type="button" class="reset-filter-btn" id="reset-filter-btn">Reset</button>
             </div>
           </div>
           <ul class="task-list" id="task-list"></ul>

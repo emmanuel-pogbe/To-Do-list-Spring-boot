@@ -10,6 +10,15 @@ const searchFormEl = document.getElementById('search-form');
 const searchInputEl = document.getElementById('search-input');
 const clearSearchBtnEl = document.getElementById('clear-search-btn');
 
+// Date filter elements
+const filterRadios = document.querySelectorAll('input[name="filter-type"]');
+const dateAfterInput = document.getElementById('date-after');
+const dateBeforeInput = document.getElementById('date-before');
+const dateFromInput = document.getElementById('date-from');
+const dateToInput = document.getElementById('date-to');
+const applyFilterBtn = document.getElementById('apply-filter-btn');
+const resetFilterBtn = document.getElementById('reset-filter-btn');
+
 function showMessage(message, type = 'success') {
   statusMessage.textContent = message;
   statusMessage.className = `status-message show ${type}`;
@@ -167,6 +176,77 @@ clearSearchBtnEl.addEventListener('click', async () => {
   await handleLoadTasks();
 });
 
+// Date filter event listeners
+filterRadios.forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    const filterType = e.target.value;
+    dateAfterInput.style.display = 'none';
+    dateBeforeInput.style.display = 'none';
+    dateFromInput.style.display = 'none';
+    dateToInput.style.display = 'none';
+    applyFilterBtn.style.display = 'none';
+
+    if (filterType === 'after') {
+      dateAfterInput.style.display = 'block';
+      applyFilterBtn.style.display = 'block';
+    } else if (filterType === 'before') {
+      dateBeforeInput.style.display = 'block';
+      applyFilterBtn.style.display = 'block';
+    } else if (filterType === 'between') {
+      dateFromInput.style.display = 'block';
+      dateToInput.style.display = 'block';
+      applyFilterBtn.style.display = 'block';
+    }
+  });
+});
+
+applyFilterBtn.addEventListener('click', async () => {
+  const filterType = document.querySelector('input[name="filter-type"]:checked').value;
+  
+  if (filterType === 'after') {
+    const date = dateAfterInput.value;
+    if (!date) {
+      showMessage('Please select a date', 'error');
+      return;
+    }
+    await handleDateFilter('after', date);
+  } else if (filterType === 'before') {
+    const date = dateBeforeInput.value;
+    if (!date) {
+      showMessage('Please select a date', 'error');
+      return;
+    }
+    await handleDateFilter('before', date);
+  } else if (filterType === 'between') {
+    const startDate = dateFromInput.value;
+    const endDate = dateToInput.value;
+    if (!startDate || !endDate) {
+      showMessage('Please select both dates', 'error');
+      return;
+    }
+    if (startDate > endDate) {
+      showMessage('Start date must be before end date', 'error');
+      return;
+    }
+    await handleDateFilter('between', startDate, endDate);
+  }
+});
+
+resetFilterBtn.addEventListener('click', async () => {
+  document.getElementById('filter-all').checked = true;
+  dateAfterInput.style.display = 'none';
+  dateBeforeInput.style.display = 'none';
+  dateFromInput.style.display = 'none';
+  dateToInput.style.display = 'none';
+  applyFilterBtn.style.display = 'none';
+  dateAfterInput.value = '';
+  dateBeforeInput.value = '';
+  dateFromInput.value = '';
+  dateToInput.value = '';
+  searchInputEl.value = '';
+  await handleLoadTasks();
+});
+
 async function handleLoadTasks() {
   if (!currentUserId) {
     showMessage('Log in first to view your tasks.', 'error');
@@ -264,6 +344,81 @@ async function handleDeleteTask(taskId) {
     handleLoadTasks();
   } else {
     showMessage('Failed to delete task.', 'error');
+  }
+}
+
+async function handleDateFilter(filterType, startDate, endDate) {
+  if (!currentUserId) {
+    showMessage('Log in first to filter tasks.', 'error');
+    return;
+  }
+
+  let endpoint = '';
+  if (filterType === 'after') {
+    endpoint = '/task/user/' + currentUserId + '/after?date=' + startDate;
+  } else if (filterType === 'before') {
+    endpoint = '/task/user/' + currentUserId + '/before?date=' + startDate;
+  } else if (filterType === 'between') {
+    endpoint = '/task/user/' + currentUserId + '/between?startDate=' + startDate + '&endDate=' + endDate;
+  }
+
+  const response = await fetch(endpoint);
+  const tasks = await response.json().catch(() => []);
+
+  taskListEl.innerHTML = '';
+
+  if (tasks.length === 0) {
+    emptyStateEl.style.display = 'block';
+    showMessage('No tasks found for selected date range.', 'success');
+  } else {
+    emptyStateEl.style.display = 'none';
+    tasks.forEach((item) => {
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      
+      const taskDiv = document.createElement('div');
+      taskDiv.className = 'task-text';
+      
+      const taskP = document.createElement('p');
+      taskP.textContent = item.task;
+      
+      const dateP = document.createElement('p');
+      dateP.className = 'task-date';
+      dateP.textContent = 'Created: ' + (item.createdAt || 'Today');
+
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'task-actions';
+
+      const editInput = document.createElement('input');
+      editInput.type = 'text';
+      editInput.placeholder = 'Update description';
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-btn';
+      editBtn.type = 'button';
+      editBtn.textContent = 'Update';
+      editBtn.addEventListener('click', async () => {
+        await handleUpdateTask(item.id, editInput.value);
+      });
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', async () => {
+        await handleDeleteTask(item.id);
+      });
+
+      actionsDiv.appendChild(editInput);
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(deleteBtn);
+      
+      taskDiv.appendChild(taskP);
+      taskDiv.appendChild(dateP);
+      li.appendChild(taskDiv);
+      li.appendChild(actionsDiv);
+      taskListEl.appendChild(li);
+    });
   }
 }
 
