@@ -3,6 +3,9 @@ package com.shopleft.todo.service.impl;
 import java.util.Optional;
 
 import com.shopleft.todo.dto.UserProfile;
+import com.shopleft.todo.exception.custom.UserAlreadyExistsException;
+import com.shopleft.todo.exception.custom.UserNotFoundException;
+import com.shopleft.todo.exception.custom.WrongCredentialsException;
 import com.shopleft.todo.dto.UserAuthentication;
 import com.shopleft.todo.dto.UserCreated;
 import com.shopleft.todo.model.User;
@@ -30,8 +33,7 @@ public class UserServiceImpl implements UserService {
             result.setUserId(savedUser.getId());
             result.setCreateStatus(true);
         } else {
-            result.setUserId(doesExist.get().getId());
-            result.setCreateStatus(false);
+            throw new UserAlreadyExistsException("User already exists");
         }
         return result;
     }
@@ -51,9 +53,12 @@ public class UserServiceImpl implements UserService {
                 profile.setAuthenticated(true);
                 return profile;
             }
+            else {
+                throw new WrongCredentialsException("Wrong password");
+            }
         }
-
-        profile.setAuthenticated(false);
-        return profile;
+        else {
+            throw new UserNotFoundException("User not found");
+        }
     }
 }

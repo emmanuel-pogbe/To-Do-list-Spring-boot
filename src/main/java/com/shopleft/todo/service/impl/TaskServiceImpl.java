@@ -10,6 +10,8 @@ import com.shopleft.todo.dto.DeletedTask;
 import com.shopleft.todo.dto.NewTask;
 import com.shopleft.todo.dto.TaskCreated;
 import com.shopleft.todo.dto.UpdatedTask;
+import com.shopleft.todo.exception.custom.TaskNotFoundException;
+import com.shopleft.todo.exception.custom.UserNotFoundException;
 import com.shopleft.todo.model.Task;
 import com.shopleft.todo.model.User;
 import com.shopleft.todo.repository.TaskRepository;
@@ -30,7 +32,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskCreated createTask(NewTask task) {
         Optional<User> userOptional = userRepository.findById(task.getUserId());
         if (userOptional.isEmpty()) {
-            return new TaskCreated();
+            throw new UserNotFoundException("user not found");
         }
 
         Task newTask = new Task(task.getTask());
@@ -40,19 +42,19 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public Page<Task> getTasksByUserId(Long userId,int page, int size) {
+        Optional<User> user = userRepository.findById(userId);
+        if (!user.isPresent()) {
+            throw new UserNotFoundException("User not found");
+        }
         return taskRepository.findByUserIdOrderByCreatedAtDesc(userId,PageRequestCreator.createPageRequest(page,size));
     }
 
     public DeletedTask deleteTask(Long taskId) {
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (!taskOptional.isPresent()) {
-            System.out.println("\n\n\nWE DID NOT FIND THE TASK\n\n\n");
-            DeletedTask taskFailed = new DeletedTask();
-            taskFailed.setDeleted(false);
-            return taskFailed;
+            throw new TaskNotFoundException("Task not found");
         }
         else {
-            System.out.println("\n\n\nWE FOUND THE TASK\n\n\n");
             taskRepository.deleteTaskById(taskId);
             Task gottenTask = taskOptional.get();
             return new DeletedTask(
@@ -78,12 +80,16 @@ public class TaskServiceImpl implements TaskService {
             result.setCreatedAt(taskToUpdate.getCreatedAt());
         }
         else {
-            result.setIsUpdated(false);
+            throw new TaskNotFoundException("Task not found");
         }
         return result;
     }
 
     public Page<Task> findByTaskContains(Long userId, String description, int page, int size) {
+        Optional<User> user = userRepository.findById(userId);
+        if (!user.isPresent()) {
+            throw new UserNotFoundException("User not found");
+        }
         return taskRepository.findByTaskContains(userId,description, PageRequestCreator.createPageRequest(page, size));
     }
 

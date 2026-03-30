@@ -39,7 +39,7 @@ public class TaskController {
         @PathVariable Long userId,
         @RequestParam(required = false) String search,
         @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
-        @RequestParam(required = false, defaultValue = "5") int size
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size
     ) {
         if (search == null || search.isBlank()) {
             Page<Task> result = taskService.getTasksByUserId(userId,page,size);
@@ -69,8 +69,8 @@ public class TaskController {
     public PagedModel<Task> getTasksAfter(
         @PathVariable Long userId, 
         @RequestParam String date,
-        @RequestParam(required = false, defaultValue = "0") int page,
-        @RequestParam(required = false, defaultValue = "5") int size
+        @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size
     ) {
         LocalDate minDate = LocalDate.parse(date);
         Page<Task> result = taskService.findByTaskAfter(userId, minDate,page,size);
@@ -81,8 +81,8 @@ public class TaskController {
     public PagedModel<Task> getTasksBefore(
         @PathVariable Long userId, 
         @RequestParam String date,
-        @RequestParam(required = false, defaultValue = "0") int page,
-        @RequestParam(required = false, defaultValue = "5") int size
+        @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size
     ) {
         LocalDate maxDate = LocalDate.parse(date);
         Page<Task> result = taskService.findByTaskBefore(userId, maxDate,page,size);
@@ -94,8 +94,8 @@ public class TaskController {
         @PathVariable Long userId, 
         @RequestParam String startDate, 
         @RequestParam String endDate,
-        @RequestParam(required = false, defaultValue = "0") int page,
-        @RequestParam(required = false, defaultValue = "5") int size
+        @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size
     ) {
         LocalDate minDate = LocalDate.parse(startDate);
         LocalDate maxDate = LocalDate.parse(endDate);
