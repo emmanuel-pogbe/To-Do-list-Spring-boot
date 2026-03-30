@@ -412,6 +412,59 @@
       background: #4b5563;
     }
 
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 0;
+      margin-top: 12px;
+    }
+
+    .pagination-info {
+      font-size: 12px;
+      color: #666;
+      margin-right: 16px;
+    }
+
+    .pagination-btn {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      background: white;
+      color: #333;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+    .pagination-btn:disabled {
+      background: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .pagination-btn.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+    .page-number {
+      padding: 4px 8px;
+      font-size: 12px;
+      color: #666;
+      min-width: 24px;
+      text-align: center;
+    }
+
     .load-btn {
       padding: 8px 16px;
       background: #2563eb;
@@ -751,6 +804,12 @@
           <ul class="task-list" id="task-list"></ul>
           <div class="empty-state" id="empty-state">
             <p>No tasks yet. Create one to get started!</p>
+          </div>
+          <div class="pagination-container" id="pagination-container" style="display: none;">
+            <div class="pagination-info" id="pagination-info"></div>
+            <button class="pagination-btn" id="prev-btn" onclick="handlePreviousPage()">← Prev</button>
+            <div id="page-numbers"></div>
+            <button class="pagination-btn" id="next-btn" onclick="handleNextPage()">Next →</button>
           </div>
         </div>
       </div>

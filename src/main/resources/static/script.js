@@ -19,6 +19,19 @@ const dateToInput = document.getElementById('date-to');
 const applyFilterBtn = document.getElementById('apply-filter-btn');
 const resetFilterBtn = document.getElementById('reset-filter-btn');
 
+// Pagination elements
+const paginationContainer = document.getElementById('pagination-container');
+const paginationInfo = document.getElementById('pagination-info');
+const pageNumbersDiv = document.getElementById('page-numbers');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+
+// Pagination state
+let currentPage = 0;
+let totalPages = 0;
+let pageSize = 5;
+let currentFilter = null; // Track which filter is active
+
 function showMessage(message, type = 'success') {
   statusMessage.textContent = message;
   statusMessage.className = `status-message show ${type}`;
@@ -244,6 +257,7 @@ resetFilterBtn.addEventListener('click', async () => {
   dateFromInput.value = '';
   dateToInput.value = '';
   searchInputEl.value = '';
+  currentPage = 0; // Reset pagination
   await handleLoadTasks();
 });
 
@@ -255,64 +269,118 @@ async function handleLoadTasks() {
 
   const searchTerm = searchInputEl.value.trim();
   const endpoint = searchTerm
-    ? '/task/user/' + currentUserId + '?search=' + encodeURIComponent(searchTerm)
-    : '/task/user/' + currentUserId;
+    ? '/task/user/' + currentUserId + '?search=' + encodeURIComponent(searchTerm) + '&page=' + currentPage + '&size=' + pageSize
+    : '/task/user/' + currentUserId + '?page=' + currentPage + '&size=' + pageSize;
   const response = await fetch(endpoint);
-  const tasks = await response.json().catch(() => []);
+  const pageResponse = await response.json().catch(() => ({ content: [] }));
+
+  // Extract tasks from PagedModel response
+  const tasks = pageResponse.content || [];
+  totalPages = pageResponse.page?.totalPages || 0;
 
   taskListEl.innerHTML = '';
 
   if (tasks.length === 0) {
     emptyStateEl.style.display = 'block';
+    paginationContainer.style.display = 'none';
   } else {
     emptyStateEl.style.display = 'none';
-    tasks.forEach((item) => {
-      const li = document.createElement('li');
-      li.className = 'task-item';
-      
-      const taskDiv = document.createElement('div');
-      taskDiv.className = 'task-text';
-      
-      const taskP = document.createElement('p');
-      taskP.textContent = item.task;
-      
-      const dateP = document.createElement('p');
-      dateP.className = 'task-date';
-      dateP.textContent = 'Created: ' + (item.createdAt || 'Today');
+    renderTasks(tasks);
+    renderPagination();
+    paginationContainer.style.display = 'flex';
+  }
+}
 
-      const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'task-actions';
+function renderTasks(tasks) {
+  tasks.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    
+    const taskDiv = document.createElement('div');
+    taskDiv.className = 'task-text';
+    
+    const taskP = document.createElement('p');
+    taskP.textContent = item.task;
+    
+    const dateP = document.createElement('p');
+    dateP.className = 'task-date';
+    dateP.textContent = 'Created: ' + (item.createdAt || 'Today');
 
-      const editInput = document.createElement('input');
-      editInput.type = 'text';
-      editInput.placeholder = 'Update description';
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'task-actions';
 
-      const editBtn = document.createElement('button');
-      editBtn.className = 'edit-btn';
-      editBtn.type = 'button';
-      editBtn.textContent = 'Update';
-      editBtn.addEventListener('click', async () => {
-        await handleUpdateTask(item.id, editInput.value);
-      });
+    const editInput = document.createElement('input');
+    editInput.type = 'text';
+    editInput.placeholder = 'Update description';
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.type = 'button';
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', async () => {
-        await handleDeleteTask(item.id);
-      });
-
-      actionsDiv.appendChild(editInput);
-      actionsDiv.appendChild(editBtn);
-      actionsDiv.appendChild(deleteBtn);
-      
-      taskDiv.appendChild(taskP);
-      taskDiv.appendChild(dateP);
-      li.appendChild(taskDiv);
-      li.appendChild(actionsDiv);
-      taskListEl.appendChild(li);
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.type = 'button';
+    editBtn.textContent = 'Update';
+    editBtn.addEventListener('click', async () => {
+      await handleUpdateTask(item.id, editInput.value);
     });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.type = 'button';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.addEventListener('click', async () => {
+      await handleDeleteTask(item.id);
+    });
+
+    actionsDiv.appendChild(editInput);
+    actionsDiv.appendChild(editBtn);
+    actionsDiv.appendChild(deleteBtn);
+    
+    taskDiv.appendChild(taskP);
+    taskDiv.appendChild(dateP);
+    li.appendChild(taskDiv);
+    li.appendChild(actionsDiv);
+    taskListEl.appendChild(li);
+  });
+}
+
+function renderPagination() {
+  paginationInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+  
+  prevBtn.disabled = currentPage === 0;
+  nextBtn.disabled = currentPage >= totalPages - 1;
+
+  pageNumbersDiv.innerHTML = '';
+  
+  // Show page numbers (max 5 pages visible)
+  let startPage = Math.max(0, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + 5);
+  if (endPage - startPage < 5) {
+    startPage = Math.max(0, endPage - 5);
+  }
+
+  for (let i = startPage; i < endPage; i++) {
+    const pageBtn = document.createElement('button');
+    pageBtn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+    pageBtn.textContent = i + 1;
+    pageBtn.onclick = () => handlePageClick(i);
+    pageNumbersDiv.appendChild(pageBtn);
+  }
+}
+
+function handlePageClick(pageNum) {
+  currentPage = pageNum;
+  handleLoadTasks();
+}
+
+function handlePreviousPage() {
+  if (currentPage > 0) {
+    currentPage--;
+    handleLoadTasks();
+  }
+}
+
+function handleNextPage() {
+  if (currentPage < totalPages - 1) {
+    currentPage++;
+    handleLoadTasks();
   }
 }
 
@@ -353,72 +421,33 @@ async function handleDateFilter(filterType, startDate, endDate) {
     return;
   }
 
+  currentPage = 0; // Reset to first page when applying new filter
   let endpoint = '';
   if (filterType === 'after') {
-    endpoint = '/task/user/' + currentUserId + '/after?date=' + startDate;
+    endpoint = '/task/user/' + currentUserId + '/after?date=' + startDate + '&page=' + currentPage + '&size=' + pageSize;
   } else if (filterType === 'before') {
-    endpoint = '/task/user/' + currentUserId + '/before?date=' + startDate;
+    endpoint = '/task/user/' + currentUserId + '/before?date=' + startDate + '&page=' + currentPage + '&size=' + pageSize;
   } else if (filterType === 'between') {
-    endpoint = '/task/user/' + currentUserId + '/between?startDate=' + startDate + '&endDate=' + endDate;
+    endpoint = '/task/user/' + currentUserId + '/between?startDate=' + startDate + '&endDate=' + endDate + '&page=' + currentPage + '&size=' + pageSize;
   }
 
   const response = await fetch(endpoint);
-  const tasks = await response.json().catch(() => []);
+  const pageResponse = await response.json().catch(() => ({ content: [] }));
+
+  const tasks = pageResponse.content || [];
+  totalPages = pageResponse.page?.totalPages || 0;
 
   taskListEl.innerHTML = '';
 
   if (tasks.length === 0) {
     emptyStateEl.style.display = 'block';
+    paginationContainer.style.display = 'none';
     showMessage('No tasks found for selected date range.', 'success');
   } else {
     emptyStateEl.style.display = 'none';
-    tasks.forEach((item) => {
-      const li = document.createElement('li');
-      li.className = 'task-item';
-      
-      const taskDiv = document.createElement('div');
-      taskDiv.className = 'task-text';
-      
-      const taskP = document.createElement('p');
-      taskP.textContent = item.task;
-      
-      const dateP = document.createElement('p');
-      dateP.className = 'task-date';
-      dateP.textContent = 'Created: ' + (item.createdAt || 'Today');
-
-      const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'task-actions';
-
-      const editInput = document.createElement('input');
-      editInput.type = 'text';
-      editInput.placeholder = 'Update description';
-
-      const editBtn = document.createElement('button');
-      editBtn.className = 'edit-btn';
-      editBtn.type = 'button';
-      editBtn.textContent = 'Update';
-      editBtn.addEventListener('click', async () => {
-        await handleUpdateTask(item.id, editInput.value);
-      });
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.type = 'button';
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', async () => {
-        await handleDeleteTask(item.id);
-      });
-
-      actionsDiv.appendChild(editInput);
-      actionsDiv.appendChild(editBtn);
-      actionsDiv.appendChild(deleteBtn);
-      
-      taskDiv.appendChild(taskP);
-      taskDiv.appendChild(dateP);
-      li.appendChild(taskDiv);
-      li.appendChild(actionsDiv);
-      taskListEl.appendChild(li);
-    });
+    renderTasks(tasks);
+    renderPagination();
+    paginationContainer.style.display = 'flex';
   }
 }
 
