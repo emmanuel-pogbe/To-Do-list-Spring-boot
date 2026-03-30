@@ -1,9 +1,9 @@
 package com.shopleft.todo.service.impl;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import com.shopleft.todo.dto.DeletedTask;
@@ -15,6 +15,7 @@ import com.shopleft.todo.model.User;
 import com.shopleft.todo.repository.TaskRepository;
 import com.shopleft.todo.repository.UserRepository;
 import com.shopleft.todo.service.interfaces.TaskService;
+import com.shopleft.todo.utils.PageRequestCreator;
 
 @Service
 public class TaskServiceImpl implements TaskService {
@@ -38,8 +39,8 @@ public class TaskServiceImpl implements TaskService {
         return new TaskCreated(savedTask.getId(), savedTask.getTask());
     }
 
-    public List<Task> getTasksByUserId(Long userId) {
-        return taskRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public Page<Task> getTasksByUserId(Long userId,int page, int size) {
+        return taskRepository.findByUserIdOrderByCreatedAtDesc(userId,PageRequestCreator.createPageRequest(page,size));
     }
 
     public DeletedTask deleteTask(Long taskId) {
@@ -82,19 +83,19 @@ public class TaskServiceImpl implements TaskService {
         return result;
     }
 
-    public List<Task> findByTaskContains(Long userId, String description) {
-        return taskRepository.findByTaskContains(userId,description);
+    public Page<Task> findByTaskContains(Long userId, String description, int page, int size) {
+        return taskRepository.findByTaskContains(userId,description, PageRequestCreator.createPageRequest(page, size));
     }
 
-    public List<Task> findByTaskAfter(Long userId, LocalDate minDate) {
-        return taskRepository.findByTaskAfter(userId, minDate);
+    public Page<Task> findByTaskAfter(Long userId, LocalDate minDate, int page, int size) {
+        return taskRepository.findByTaskAfter(userId, minDate, PageRequestCreator.createPageRequest(page, size));
     }
 
-    public List<Task> findByTaskBefore(Long userId, LocalDate maxDate) {
-        return taskRepository.findByTaskBefore(userId, maxDate);
+    public Page<Task> findByTaskBefore(Long userId, LocalDate maxDate, int page, int size) {
+        return taskRepository.findByTaskBefore(userId, maxDate, PageRequestCreator.createPageRequest(page, size));
     }
 
-    public List<Task> findByTaskBetween(Long userId, LocalDate minDate, LocalDate maxDate) {
-        return taskRepository.findByTaskBetween(userId, minDate, maxDate);
+    public Page<Task> findByTaskBetween(Long userId, LocalDate minDate, LocalDate maxDate, int page, int size) {
+        return taskRepository.findByTaskBetween(userId, minDate, maxDate, PageRequestCreator.createPageRequest(page, size));
     }
 }

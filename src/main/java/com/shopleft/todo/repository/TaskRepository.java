@@ -3,6 +3,8 @@ package com.shopleft.todo.repository;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -23,17 +25,18 @@ public interface TaskRepository extends JpaRepository<Task,Long> {
 	@Query("DELETE FROM Task t WHERE t.id = :id")
 	void deleteTaskById(@Param("id") Long id);
 
+	Page<Task> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
 	// Using native query
 	@Query(value = "SELECT * FROM tasks WHERE task LIKE CONCAT('%',:description,'%') AND user_id = :userId",nativeQuery = true)
-	List<Task> findByTaskContains(@Param("userId") Long userId, @Param("description") String description);
+	Page<Task> findByTaskContains(@Param("userId") Long userId, @Param("description") String description, Pageable pageable);
 
 	@Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.createdAt >= :minDate AND t.createdAt <= :maxDate ORDER BY t.createdAt DESC")
-	List<Task> findByTaskBetween(@Param("userId") Long userId, @Param("minDate") LocalDate minDate, @Param("maxDate") LocalDate maxDate);
+	Page<Task> findByTaskBetween(@Param("userId") Long userId, @Param("minDate") LocalDate minDate, @Param("maxDate") LocalDate maxDate, Pageable pageable);
 	
 	@Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.createdAt <= :maxDate ORDER BY t.createdAt DESC")
-	List<Task> findByTaskBefore(@Param("userId") Long userId, @Param("maxDate") LocalDate maxDate);
+	Page<Task> findByTaskBefore(@Param("userId") Long userId, @Param("maxDate") LocalDate maxDate, Pageable pageable);
 	
 	@Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.createdAt >= :minDate ORDER BY t.createdAt DESC")
-	List<Task> findByTaskAfter(@Param("userId") Long userId, @Param("minDate") LocalDate minDate);
+	Page<Task> findByTaskAfter(@Param("userId") Long userId, @Param("minDate") LocalDate minDate, Pageable pageable);
 }

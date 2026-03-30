@@ -1,9 +1,10 @@
 package com.shopleft.todo.controller;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PagedModel;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -26,16 +27,26 @@ import com.shopleft.todo.service.interfaces.TaskService;
 public class TaskController {
     private final TaskService taskService;
 
+    private final String defaultPageSize = "5";
+    private final String defaultPageNumber = "0";
+    
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
     @GetMapping(path = "/user/{userId}")
-    public List<Task> getTasksByUser(@PathVariable Long userId, @RequestParam(required = false) String search) {
+    public PagedModel<Task> getPagedTasksByUser(
+        @PathVariable Long userId,
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
+        @RequestParam(required = false, defaultValue = "5") int size
+    ) {
         if (search == null || search.isBlank()) {
-            return taskService.getTasksByUserId(userId);
+            Page<Task> result = taskService.getTasksByUserId(userId,page,size);
+            return new PagedModel<>(result);
         }
-        return taskService.findByTaskContains(userId, search.trim());
+        Page<Task> result = taskService.findByTaskContains(userId, search.trim(),page,size);
+        return new PagedModel<>(result);
     }
     
     @PostMapping(path = "/create")
@@ -55,21 +66,40 @@ public class TaskController {
     }
 
     @GetMapping(path = "/user/{userId}/after")
-    public List<Task> getTasksAfter(@PathVariable Long userId, @RequestParam String date) {
+    public PagedModel<Task> getTasksAfter(
+        @PathVariable Long userId, 
+        @RequestParam String date,
+        @RequestParam(required = false, defaultValue = "0") int page,
+        @RequestParam(required = false, defaultValue = "5") int size
+    ) {
         LocalDate minDate = LocalDate.parse(date);
-        return taskService.findByTaskAfter(userId, minDate);
+        Page<Task> result = taskService.findByTaskAfter(userId, minDate,page,size);
+        return new PagedModel<>(result);
     }
 
     @GetMapping(path = "/user/{userId}/before")
-    public List<Task> getTasksBefore(@PathVariable Long userId, @RequestParam String date) {
+    public PagedModel<Task> getTasksBefore(
+        @PathVariable Long userId, 
+        @RequestParam String date,
+        @RequestParam(required = false, defaultValue = "0") int page,
+        @RequestParam(required = false, defaultValue = "5") int size
+    ) {
         LocalDate maxDate = LocalDate.parse(date);
-        return taskService.findByTaskBefore(userId, maxDate);
+        Page<Task> result = taskService.findByTaskBefore(userId, maxDate,page,size);
+        return new PagedModel<>(result);
     }
 
     @GetMapping(path = "/user/{userId}/between")
-    public List<Task> getTasksBetween(@PathVariable Long userId, @RequestParam String startDate, @RequestParam String endDate) {
+    public PagedModel<Task> getTasksBetween(
+        @PathVariable Long userId, 
+        @RequestParam String startDate, 
+        @RequestParam String endDate,
+        @RequestParam(required = false, defaultValue = "0") int page,
+        @RequestParam(required = false, defaultValue = "5") int size
+    ) {
         LocalDate minDate = LocalDate.parse(startDate);
         LocalDate maxDate = LocalDate.parse(endDate);
-        return taskService.findByTaskBetween(userId, minDate, maxDate);
+        Page<Task> result = taskService.findByTaskBetween(userId, minDate, maxDate,page,size);
+        return new PagedModel<>(result);
     }
 }
