@@ -1,11 +1,10 @@
 package com.shopleft.todo.service.impl;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import com.shopleft.todo.dto.UserProfile;
 import com.shopleft.todo.exception.custom.UserAlreadyExistsException;
-import com.shopleft.todo.exception.custom.UserNotFoundException;
-import com.shopleft.todo.exception.custom.WrongCredentialsException;
 import com.shopleft.todo.dto.UserAuthentication;
 import com.shopleft.todo.dto.UserCreated;
 import com.shopleft.todo.model.User;
@@ -54,11 +53,11 @@ public class UserServiceImpl implements UserService {
                 return profile;
             }
             else {
-                throw new WrongCredentialsException("Wrong password");
+                throw new SecurityException("Invalid credentials");
             }
         }
         else {
-            throw new UserNotFoundException("User not found");
+            throw new NoSuchElementException("User not found");
         }
     }
 }
