@@ -9,4 +9,6 @@ public interface UserService {
     UserCreated createUser(User user);
 
     UserProfile authenticateUser(UserAuthentication userAuthentication);
+
+    UserProfile getUserProfile(String username);
 }

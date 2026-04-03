@@ -76,6 +76,14 @@ function switchToLogin() {
   document.getElementById('signup-error').classList.remove('show');
 }
 
+function handleSessionExpired() {
+  currentUserId = null;
+  currentUsername = null;
+  showAuthModal();
+  switchToLogin();
+  showMessage('Your session expired. Please sign in again.', 'error');
+}
+
 async function postJson(url, body) {
   const response = await fetch(url, {
     method: 'POST',
@@ -100,6 +108,20 @@ async function requestJson(url, method, body) {
   const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
   return { response, data };
+}
+
+async function restoreSession() {
+  const { response, data } = await requestJson('/user/me', 'GET');
+
+  if (response.ok && data.authenticated) {
+    currentUserId = data.userId;
+    currentUsername = data.userName;
+    showAppView();
+    await handleLoadTasks();
+    return true;
+  }
+
+  return false;
 }
 
 document.getElementById('signup-form').addEventListener('submit', async (event) => {
@@ -272,6 +294,12 @@ async function handleLoadTasks() {
     ? '/task/user/' + currentUserId + '?search=' + encodeURIComponent(searchTerm) + '&page=' + currentPage + '&size=' + pageSize
     : '/task/user/' + currentUserId + '?page=' + currentPage + '&size=' + pageSize;
   const response = await fetch(endpoint);
+
+  if (response.status === 401) {
+    handleSessionExpired();
+    return;
+  }
+
   const pageResponse = await response.json().catch(() => ({ content: [] }));
 
   // Extract tasks from PagedModel response
@@ -396,6 +424,11 @@ async function handleUpdateTask(taskId, newDescription) {
     description
   });
 
+  if (response.status === 401) {
+    handleSessionExpired();
+    return;
+  }
+
   if (response.ok && (data.isUpdated || data.updated || data.id)) {
     showMessage('Task updated successfully.', 'success');
     handleLoadTasks();
@@ -406,6 +439,11 @@ async function handleUpdateTask(taskId, newDescription) {
 
 async function handleDeleteTask(taskId) {
   const { response, data } = await requestJson('/task/delete/' + taskId, 'DELETE');
+
+  if (response.status === 401) {
+    handleSessionExpired();
+    return;
+  }
 
   if (response.ok && (data.deleted || data.isDeleted || data.id)) {
     showMessage('Task deleted successfully.', 'success');
@@ -432,6 +470,12 @@ async function handleDateFilter(filterType, startDate, endDate) {
   }
 
   const response = await fetch(endpoint);
+
+  if (response.status === 401) {
+    handleSessionExpired();
+    return;
+  }
+
   const pageResponse = await response.json().catch(() => ({ content: [] }));
 
   const tasks = pageResponse.content || [];
@@ -451,7 +495,8 @@ async function handleDateFilter(filterType, startDate, endDate) {
   }
 }
 
-function handleLogout() {
+async function handleLogout() {
+  await requestJson('/logout', 'POST');
   currentUserId = null;
   currentUsername = null;
   showAuthModal();
@@ -462,4 +507,13 @@ function handleLogout() {
 }
 
 // Initialize
-showAuthModal();
+async function initializeApp() {
+  const isAuthenticated = await restoreSession();
+
+  if (!isAuthenticated) {
+    showAuthModal();
+    switchToLogin();
+  }
+}
+
+initializeApp();
