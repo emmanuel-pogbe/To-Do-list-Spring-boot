@@ -1,5 +1,7 @@
 package com.shopleft.todo.service.impl;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -17,6 +19,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -69,6 +72,31 @@ public class UserServiceImpl implements UserService {
             return getUserProfile(userAuthentication.getUserName());
         } catch (AuthenticationException ex) {
             throw new SecurityException("Invalid credentials");
+        }
+    }
+
+    public UserProfile loginUser(UserAuthentication userAuthentication, HttpServletRequest request) {
+        UserProfile profile = authenticateUser(userAuthentication);
+
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        request.getSession(true).setAttribute(
+            HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+            securityContext
+        );
+
+        return profile;
+    }
+
+    public void logoutUser(HttpServletRequest request) {
+        try {
+            HttpSession session = request.getSession(false);
+
+            if (session != null) {
+                session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+                session.invalidate();
+            }
+        } finally {
+            SecurityContextHolder.clearContext();
         }
     }
 
