@@ -3,7 +3,8 @@ package com.shopleft.todo.exception;
 import java.util.NoSuchElementException;
 
 import com.shopleft.todo.exception.custom.UserAlreadyExistsException;
-import com.shopleft.todo.exception.response.ErrorResponse;
+import com.shopleft.todo.response.ErrorResponse;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.format.DateTimeParseException;
@@ -14,6 +15,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,7 +38,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<ErrorResponse> handleWrongCredentials(SecurityException ex, HttpServletRequest request) {
-        return buildErrorResponse("AUTHENTICATION_FAILED", "Invalid credentials", HttpStatus.UNAUTHORIZED, request);
+        return buildErrorResponse("AUTHENTICATION_FAILED", ex.getMessage(), HttpStatus.UNAUTHORIZED, request);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
+        return buildErrorResponse("AUTHENTICATION_REQUIRED", ex.getMessage(), HttpStatus.UNAUTHORIZED, request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
+        return buildErrorResponse("ACCESS_DENIED", ex.getMessage(), HttpStatus.FORBIDDEN, request);
     }
 
     @ExceptionHandler({

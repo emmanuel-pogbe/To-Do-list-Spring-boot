@@ -1,5 +1,6 @@
 let currentUserId = null;
 let currentUsername = null;
+const ACCESS_TOKEN_KEY = 'todo_access_token';
 
 const authModal = document.getElementById('auth-modal');
 const appContainer = document.getElementById('app-container');
@@ -31,6 +32,34 @@ let currentPage = 0;
 let totalPages = 0;
 let pageSize = 5;
 let currentFilter = null; // Track which filter is active
+
+function getAccessToken() {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+function setAccessToken(token) {
+  if (!token) {
+    return;
+  }
+  localStorage.setItem(ACCESS_TOKEN_KEY, token);
+}
+
+function clearAccessToken() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+function parseOAuthFragment() {
+  if (!window.location.hash) {
+    return;
+  }
+
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const token = hashParams.get('access_token');
+  if (token) {
+    setAccessToken(token);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
 
 function showMessage(message, type = 'success') {
   statusMessage.textContent = message;
@@ -79,19 +108,65 @@ function switchToLogin() {
 function handleSessionExpired() {
   currentUserId = null;
   currentUsername = null;
+  clearAccessToken();
   showAuthModal();
   switchToLogin();
   showMessage('Your session expired. Please sign in again.', 'error');
 }
 
-async function postJson(url, body) {
+async function tryRefreshAccessToken() {
+  const response = await fetch('/user/refresh', {
+    method: 'POST',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    clearAccessToken();
+    return false;
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (data.accessToken) {
+    setAccessToken(data.accessToken);
+    return true;
+  }
+
+  clearAccessToken();
+  return false;
+}
+
+async function authFetch(url, options = {}, allowRefresh = true) {
+  const accessToken = getAccessToken();
+  const headers = { ...(options.headers || {}) };
+
+  if (accessToken) {
+    headers.Authorization = 'Bearer ' + accessToken;
+  }
+
   const response = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include'
+  });
+
+  if (response.status === 401 && allowRefresh) {
+    const refreshed = await tryRefreshAccessToken();
+    if (refreshed) {
+      return authFetch(url, options, false);
+    }
+  }
+
+  return response;
+}
+
+async function postJson(url, body) {
+  const response = await authFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(body)
-  });
+  }, false);
 
   const data = await response.json().catch(() => ({}));
   return { response, data };
@@ -105,7 +180,7 @@ async function requestJson(url, method, body) {
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
+  const response = await authFetch(url, options);
   const data = await response.json().catch(() => ({}));
   return { response, data };
 }
@@ -161,6 +236,7 @@ document.getElementById('login-form').addEventListener('submit', async (event) =
   const { response, data } = await postJson('/user/login', { userName, password });
 
   if (response.ok && data.authenticated) {
+    setAccessToken(data.accessToken);
     currentUserId = data.userId;
     currentUsername = userName;
     document.getElementById('login-form').reset();
@@ -172,6 +248,7 @@ document.getElementById('login-form').addEventListener('submit', async (event) =
     showErrorInForm('login', 'Invalid username or password.');
     currentUserId = null;
     currentUsername = null;
+    clearAccessToken();
   }
 });
 
@@ -190,7 +267,12 @@ document.getElementById('task-form').addEventListener('submit', async (event) =>
     return;
   }
 
-  const { data } = await postJson('/task/create', { userId: currentUserId, task });
+  const { response, data } = await requestJson('/task/create', 'POST', { userId: currentUserId, task });
+
+  if (response.status === 401) {
+    handleSessionExpired();
+    return;
+  }
 
   if (data.taskId) {
     showMessage('Task created!', 'success');
@@ -293,7 +375,7 @@ async function handleLoadTasks() {
   const endpoint = searchTerm
     ? '/task/user/' + currentUserId + '?search=' + encodeURIComponent(searchTerm) + '&page=' + currentPage + '&size=' + pageSize
     : '/task/user/' + currentUserId + '?page=' + currentPage + '&size=' + pageSize;
-  const response = await fetch(endpoint);
+  const response = await authFetch(endpoint);
 
   if (response.status === 401) {
     handleSessionExpired();
@@ -469,7 +551,7 @@ async function handleDateFilter(filterType, startDate, endDate) {
     endpoint = '/task/user/' + currentUserId + '/between?startDate=' + startDate + '&endDate=' + endDate + '&page=' + currentPage + '&size=' + pageSize;
   }
 
-  const response = await fetch(endpoint);
+  const response = await authFetch(endpoint);
 
   if (response.status === 401) {
     handleSessionExpired();
@@ -496,9 +578,10 @@ async function handleDateFilter(filterType, startDate, endDate) {
 }
 
 async function handleLogout() {
-  await requestJson('/logout', 'POST');
+  await requestJson('/user/logout', 'POST');
   currentUserId = null;
   currentUsername = null;
+  clearAccessToken();
   showAuthModal();
   switchToLogin();
   document.getElementById('login-form').reset();
@@ -508,6 +591,8 @@ async function handleLogout() {
 
 // Initialize
 async function initializeApp() {
+  parseOAuthFragment();
+
   const isAuthenticated = await restoreSession();
 
   if (!isAuthenticated) {

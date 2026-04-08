@@ -1,6 +1,10 @@
 package com.shopleft.todo.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shopleft.todo.repository.UserRepository;
+import com.shopleft.todo.response.ErrorResponse;
+import com.shopleft.todo.service.CustomOidcUserService;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -9,20 +13,18 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.core.userdetails.User;
-
-import java.time.OffsetDateTime;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -46,33 +48,41 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        AccessDeniedHandler jsonAccessDeniedHandler = (request, response, ex) -> {
-            response.setStatus(403);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write(buildErrorJson(
-                "ACCESS_DENIED",
-                "You do not have permission to access this resource",
-                403,
-                request.getRequestURI()
-            ));
-        };
+    public SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        JwtAuthenticationFilter jwtAuthenticationFilter,
+        CustomOidcUserService customOidcUserService,
+        OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
+    ) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
 
         http.csrf(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptionHandling -> exceptionHandling
                 .authenticationEntryPoint((request, response, ex) -> {
                     response.setStatus(401);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write(buildErrorJson(
+                    ErrorResponse errorResponse = buildErrorResponse(
                         "AUTHENTICATION_REQUIRED",
-                        "Authentication is required to access this resource",
+                        "Authentication credentials are required to access this resource",
                         401,
                         request.getRequestURI()
-                    ));
+                    );
+                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
                 })
-                .accessDeniedHandler(jsonAccessDeniedHandler))
+                .accessDeniedHandler((request, response, ex) -> {
+                    response.setStatus(403);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    ErrorResponse errorResponse = buildErrorResponse(
+                        "ACCESS_DENIED",
+                        "You do not have permission to access this resource",
+                        403,
+                        request.getRequestURI()
+                    );
+                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+                }))
             .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                 .requestMatchers(
                     "/",
@@ -82,25 +92,23 @@ public class SecurityConfiguration {
                     "/error",
                     "/user/create",
                     "/user/login",
+                    "/user/refresh",
+                    "/oauth2/**",
+                    "/login/oauth2/**",
                     "/h2-console/**"
                 ).permitAll()
                 .anyRequest().authenticated())
+            .oauth2Login(oauth2Login -> oauth2Login
+                .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint.oidcUserService(customOidcUserService))
+                .successHandler(oAuth2LoginSuccessHandler)
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
     }
 
-    private String buildErrorJson(String errorCode, String message, int status, String path) {
-        String escapedMessage = message.replace("\"", "\\\"");
-        String escapedPath = path.replace("\"", "\\\"");
-
-        return String.format(
-            "{\"message\":\"%s\",\"status\":%d,\"errorCode\":\"%s\",\"path\":\"%s\",\"timestamp\":\"%s\"}",
-            escapedMessage,
-            status,
-            errorCode,
-            escapedPath,
-            OffsetDateTime.now()
-        );
+    private ErrorResponse buildErrorResponse(String errorCode, String message, int status, String path) {
+        return new ErrorResponse(errorCode, message, status, path);
     }
 }

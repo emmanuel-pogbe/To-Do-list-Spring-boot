@@ -1,4 +1,4 @@
-package com.shopleft.todo.exception.response;
+package com.shopleft.todo.response;
 
 import java.time.OffsetDateTime;
 

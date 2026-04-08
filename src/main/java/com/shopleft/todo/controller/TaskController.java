@@ -2,9 +2,12 @@ package com.shopleft.todo.controller;
 
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.web.PagedModel;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,18 +23,22 @@ import com.shopleft.todo.dto.NewTask;
 import com.shopleft.todo.dto.TaskCreated;
 import com.shopleft.todo.dto.UpdatedTask;
 import com.shopleft.todo.model.Task;
+import com.shopleft.todo.model.User;
+import com.shopleft.todo.repository.UserRepository;
 import com.shopleft.todo.service.interfaces.TaskService;
 
 @RestController
 @RequestMapping("/task")
 public class TaskController {
     private final TaskService taskService;
+    private final UserRepository userRepository;
 
     private final String defaultPageSize = "5";
     private final String defaultPageNumber = "0";
     
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, UserRepository userRepository) {
         this.taskService = taskService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping(path = "/user/{userId}")
@@ -39,8 +46,11 @@ public class TaskController {
         @PathVariable Long userId,
         @RequestParam(required = false) String search,
         @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
-        @RequestParam(required = false, defaultValue = defaultPageSize) int size
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size,
+        Authentication authentication
     ) {
+        assertOwner(userId, authentication);
+
         if (search == null || search.isBlank()) {
             Page<Task> result = taskService.getTasksByUserId(userId,page,size);
             return new PagedModel<>(result);
@@ -50,7 +60,8 @@ public class TaskController {
     }
     
     @PostMapping(path = "/create")
-    public TaskCreated createTask(@RequestBody NewTask task) {
+    public TaskCreated createTask(@RequestBody NewTask task, Authentication authentication) {
+        assertOwner(task.getUserId(), authentication);
         return taskService.createTask(task);
     }
 
@@ -70,8 +81,10 @@ public class TaskController {
         @PathVariable Long userId, 
         @RequestParam String date,
         @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
-        @RequestParam(required = false, defaultValue = defaultPageSize) int size
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size,
+        Authentication authentication
     ) {
+        assertOwner(userId, authentication);
         LocalDate minDate = LocalDate.parse(date);
         Page<Task> result = taskService.findByTaskAfter(userId, minDate,page,size);
         return new PagedModel<>(result);
@@ -82,8 +95,10 @@ public class TaskController {
         @PathVariable Long userId, 
         @RequestParam String date,
         @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
-        @RequestParam(required = false, defaultValue = defaultPageSize) int size
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size,
+        Authentication authentication
     ) {
+        assertOwner(userId, authentication);
         LocalDate maxDate = LocalDate.parse(date);
         Page<Task> result = taskService.findByTaskBefore(userId, maxDate,page,size);
         return new PagedModel<>(result);
@@ -95,11 +110,28 @@ public class TaskController {
         @RequestParam String startDate, 
         @RequestParam String endDate,
         @RequestParam(required = false, defaultValue = defaultPageNumber) int page,
-        @RequestParam(required = false, defaultValue = defaultPageSize) int size
+        @RequestParam(required = false, defaultValue = defaultPageSize) int size,
+        Authentication authentication
     ) {
+        assertOwner(userId, authentication);
         LocalDate minDate = LocalDate.parse(startDate);
         LocalDate maxDate = LocalDate.parse(endDate);
         Page<Task> result = taskService.findByTaskBetween(userId, minDate, maxDate,page,size);
         return new PagedModel<>(result);
+    }
+
+    private void assertOwner(Long userId, Authentication authentication) {
+        System.out.println("Authentication object for task: ");
+        System.out.println(authentication);
+        if (authentication == null || authentication.getName() == null) {
+            throw new AccessDeniedException("Authentication required");
+        }
+
+        User authenticatedUser = userRepository.findByUsername(authentication.getName())
+            .orElseThrow(() -> new NoSuchElementException("Authenticated user not found"));
+
+        if (authenticatedUser.getId() != userId) {
+            throw new AccessDeniedException("You are not authorized to access this user's tasks");
+        }
     }
 }

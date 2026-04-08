@@ -19,7 +19,7 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"password", "tasks"})
+    @JsonIgnoreProperties({"password", "tasks", "refreshTokens"})
     private User user;
 
     public Task() {

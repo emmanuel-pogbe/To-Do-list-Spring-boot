@@ -4,6 +4,9 @@ public class UserProfile {
 	private Long userId;
 	private String userName;
 	private boolean authenticated;
+	private String accessToken;
+	private String tokenType;
+	private Long expiresIn;
 
 	public UserProfile() {}
 
@@ -23,4 +26,13 @@ public class UserProfile {
 	public boolean isAuthenticated() {return authenticated;}
 
 	public void setAuthenticated(boolean authenticated) {this.authenticated = authenticated;}
+
+	public String getAccessToken() {return accessToken;}
+	public void setAccessToken(String accessToken) {this.accessToken = accessToken;}
+
+	public String getTokenType() {return tokenType;}
+	public void setTokenType(String tokenType) {this.tokenType = tokenType;}
+
+	public Long getExpiresIn() {return expiresIn;}
+	public void setExpiresIn(Long expiresIn) {this.expiresIn = expiresIn;}
 }
