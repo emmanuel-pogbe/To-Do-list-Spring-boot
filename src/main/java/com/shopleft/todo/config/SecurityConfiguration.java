@@ -94,11 +94,13 @@ public class SecurityConfiguration {
                     "/user/login",
                     "/user/refresh",
                     "/oauth2/**",
+                    "/callback/**",
                     "/login/oauth2/**",
                     "/h2-console/**"
                 ).permitAll()
                 .anyRequest().authenticated())
             .oauth2Login(oauth2Login -> oauth2Login
+                .redirectionEndpoint(redirectionEndpoint -> redirectionEndpoint.baseUri("/callback/**"))
                 .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint.oidcUserService(customOidcUserService))
                 .successHandler(oAuth2LoginSuccessHandler)
             )

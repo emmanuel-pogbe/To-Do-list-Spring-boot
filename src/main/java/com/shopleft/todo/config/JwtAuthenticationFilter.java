@@ -32,10 +32,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         FilterChain filterChain
     ) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
-        String path = request.getRequestURI();
-
+        
         if (authHeader != null && authHeader.startsWith("Bearer ") && SecurityContextHolder.getContext().getAuthentication() == null) {
-            System.out.println("[AUTH][FILTER] Bearer token found for path=" + path);
+            System.out.println("Bearer token found, time to verify ig");
             String token = authHeader.substring(7);
 
             try {
@@ -47,11 +46,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("ROLE_USER"))
                     );
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    System.out.println("[AUTH][FILTER] Access token valid. SecurityContext set for username=" + user.getUsername());
+                    System.out.println("JwtAuthenticationFilter Access token valid. SecurityContext set for username=" + user.getUsername());
                 });
             } catch (Exception ex) {
                 SecurityContextHolder.clearContext();
-                System.out.println("[AUTH][FILTER] Access token invalid/expired for path=" + path + ", reason=" + ex.getClass().getSimpleName());
+                System.out.println("JwtAuthenticationFilter Access token invalid/expired for path reason=" + ex.getClass().getSimpleName());
             }
         }
 
